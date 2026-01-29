@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AgroBot Admin Panel</title>
+
+    <!-- Link shared CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="admin-container">
+    <h2>🌱 AgroBot Admin Dashboard</h2>
+
+    <!-- ADD / UPDATE DISEASE FORM -->
+    <form class="admin-form" id="addForm">
+        <input id="plant" placeholder="Plant name (e.g. Tomato)" required>
+        <input id="disease" placeholder="Disease name (e.g. Leaf Mold)" required>
+        <input id="cause" placeholder="Cause" required>
+        <input id="treatment" placeholder="Treatment" required>
+
+        <button type="submit">Add / Update Disease</button>
+    </form>
+
+    <!-- DATABASE TABLE -->
+    <table>
+        <thead>
+            <tr>
+                <th>Plant</th>
+                <th>Disease</th>
+                <th>Cause</th>
+                <th>Treatment</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="dbTable">
+            <!-- rows added dynamically -->
+        </tbody>
+    </table>
+
+    <a href="/logout" class="logout">Logout</a>
+</div>
+
+<script>
+/* ---------------- LOAD DATABASE ---------------- */
+async function loadDatabase() {
+    const res = await fetch('/admin/data');
+    const data = await res.json();
+
+    const table = document.getElementById('dbTable');
+    table.innerHTML = '';
+
+    for (const plant in data) {
+        for (const disease in data[plant]) {
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td>${plant}</td>
+                <td>${disease}</td>
+                <td>${data[plant][disease].cause}</td>
+                <td>${data[plant][disease].treatment}</td>
+                <td>
+                    <button class="delete-btn"
+                        onclick="deleteDisease('${plant}','${disease}')">
+                        Delete
+                    </button>
+                </td>
+            `;
+            table.appendChild(row);
+        }
+    }
+}
+
+/* ---------------- ADD / UPDATE ---------------- */
+document.getElementById('addForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const payload = {
+        plant: document.getElementById('plant').value.trim(),
+        disease: document.getElementById('disease').value.trim(),
+        cause: document.getElementById('cause').value.trim(),
+        treatment: document.getElementById('treatment').value.trim()
+    };
+
+    await fetch('/admin/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    e.target.reset();
+    loadDatabase();
+});
+
+/* ---------------- DELETE ---------------- */
+async function deleteDisease(plant, disease) {
+    if (!confirm(`Delete ${disease} from ${plant}?`)) return;
+
+    await fetch('/admin/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plant, disease })
+    });
+
+    loadDatabase();
+}
+
+/* ---------------- INIT ---------------- */
+loadDatabase();
+</script>
+
+</body>
+</html>

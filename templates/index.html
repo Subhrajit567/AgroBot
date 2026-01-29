@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroBot Universal AI Assistant</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #F2E8CF;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 700px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 85vh;
+            max-height: 900px;
+        }
+
+        .chat-header {
+            background-color: #6A994E; /* Green header */
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Language Selector Styling */
+        #language-selector {
+            background: none;
+            border: 1px solid white;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        #language-selector option {
+            color: black;
+            background-color: white;
+        }
+
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #e9ecef;
+            border-top: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .chat-input-area {
+            display: flex;
+            align-items: center; /* Align items vertically in the middle */
+            padding: 10px 20px;
+            background-color: #ffffff;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .chat-input-area input[type="text"] {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 20px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s;
+            margin-right: 10px; /* Space between input and send button */
+        }
+
+        .chat-input-area input[type="text"]:focus {
+            border-color: #4CAF50;
+        }
+
+        /* Send button - now a square/rounded-square */
+        .chat-input-area .send-button { /* Added class 'send-button' */
+            background-color: #6A994E;
+            color: white;
+            border: none;
+            border-radius: 20px; /* Slightly rounded corners */
+            width: 80px; /* Wider button */
+            height: 40px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 1em; /* Smaller font for "Send" text */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 15px; /* Add padding for text */
+            box-sizing: border-box; /* Include padding in width/height */
+        }
+
+        .chat-input-area .send-button:hover {
+            background-color: #45a049;
+        }
+
+        /* Message Styling */
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .message.user .message-bubble {
+            background-color: #DCF8C6; /* Light green/user color */
+            color: #1A1A1A;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.bot .message-bubble {
+            background-color: #ffffff; /* White/bot color */
+            color: #1A1A1A;
+            border-bottom-left-radius: 2px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        /* New Style for uploaded image inside bot bubble */
+        .uploaded-image {
+            max-width: 100%;
+            max-height: 250px; /* Limit image size */
+            border-radius: 8px;
+            margin: 10px 0;
+            display: block;
+        }
+
+        /* Specific styles for the result block */
+        .result-block {
+            margin-top: 10px;
+            padding: 12px;
+            background-color: #f7f7f7;
+            border-left: 5px solid #4CAF50;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+
+        .result-block strong {
+            color: #2E7D32; /* Dark green for labels */
+        }
+
+        .result-block pre {
+            white-space: pre-wrap;
+            margin: 5px 0 0 0;
+            font-family: inherit;
+        }
+
+        /* --- NEW UPLOAD BUTTON STYLES --- */
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-right: 10px; /* Space between upload button and text input */
+        }
+
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px; /* Large to cover button */
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Style for the visible "Upload Image" button */
+        .btn-upload {
+            background-color: #f0f0f0; /* Light grey button */
+            color: #333;
+            padding: 10px 15px;
+            border-radius: 20px; /* Rounded button */
+            border: 1px solid #ced4da;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s, border-color 0.3s;
+            display: flex;
+            align-items: center;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+        .btn-upload:hover {
+            background-color: #e2e6ea;
+            border-color: #a0a0a0;
+        }
+
+        .btn-upload .upload-icon {
+            margin-right: 5px; /* Space between icon and text */
+        }
+
+        /* Style for displaying the selected file name */
+        .file-name-display {
+            font-size: 0.85em;
+            color: #555;
+            margin-left: 10px;
+            flex-shrink: 0; /* Prevent it from shrinking */
+            max-width: 120px; /* Limit width */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Add ellipsis for long names */
+            white-space: nowrap;
+            display: none; /* Hidden by default, shown when file selected */
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        AgroBot
+        <select id="language-selector" onchange="updateWelcomeMessage()">
+            <option value="en">English</option>
+            <option value="hi">हिंदी (Hindi)</option>
+            <option value="or">ଓଡ଼ିଆ (Odia)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="mr">मराठी (Marathi)</option>
+            <option value="te">తెలుగు (Telugu)</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="gu">ગુજરાતી (Gujarati)</option>
+            <option value="ur">اردو (Urdu)</option>
+            <option value="kn">ಕನ್ನಡ (Kannada)</option>
+            <option value="ml">മലയാളം (Malayalam)</option>
+            <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+        </select>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+        </div>
+
+    <div class="chat-input-area">
+        <div class="upload-btn-wrapper">
+            <input type="file" id="image-upload" accept="image/*" onchange="handleImageSelection(event)">
+            <button class="btn-upload" title="Upload Image">
+                <span class="upload-icon">⬆️</span> Upload
+            </button>
+        </div>
+        <span id="file-name-display" class="file-name-display"></span> <input type="text" id="user-input" placeholder="Type your question..." onkeypress="if(event.keyCode === 13) sendMessage()">
+        <button class="send-button" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    const chatMessages = document.getElementById('chat-messages');
+    const userInput = document.getElementById('user-input');
+    const langSelector = document.getElementById('language-selector');
+    const imageUploadInput = document.getElementById('image-upload'); // Get reference to the file input
+    const fileNameDisplay = document.getElementById('file-name-display'); // Get reference to file name display
+
+    const welcomeMessages = {
+        en: `Hello! I'm **AgroBot**. How can I assist you with your agricultural queries today? 👋<br><br>You can:<br><ul><li>**Upload an image** of a diseased leaf.</li><li>**Type your symptoms** and the plant name (e.g., "brown spots in tomato").</li></ul>`,
+        hi: `नमस्ते! मैं **एग्रोबोट** हूँ। आज मैं आपकी कृषि संबंधी समस्याओं में कैसे मदद कर सकता हूँ? 👋<br><br>आप कर सकते हैं:<br><ul><li>**रोगग्रस्त पत्ती की तस्वीर अपलोड करें।**</li><li>**अपने लक्षणों और फ़सल का नाम टाइप करें** (उदाहरण: "टमाटर में भूरे धब्बे")।</li></ul>`,
+        or: `ନମସ୍କାର! ମୁଁ **ଆଗ୍ରୋବଟ୍**। ଆଜି ମୁଁ ଆପଣଙ୍କ କୃଷି ପ୍ରଶ୍ନରେ କିପରି ସାହାଯ୍ୟ କରିପାରିବି? 👋<br><br>ଆପଣ କରିପାରିବେ:<br><ul><li>**ରୋଗଗ୍ରସ୍ତ ପତ୍ରର ଏକ ଛବି ଅପଲୋଡ୍ କରନ୍ତୁ।**</li><li>**ଆପଣଙ୍କର ଲକ୍ଷଣ ଏବଂ ଫସଲ ନାମ ଟାଇପ୍ କରନ୍ତୁ** (ଉଦାହରଣ: "ଟମାଟୋରେ ମାଟିଆ ଦାଗ")।</ul>`,
+        bn: `নমস্কার! আমি **এগ্রোবট**। আজ আমি আপনাকে আপনার কৃষি প্রশ্নে কিভাবে সাহায্য করতে পারি? 👋<br><br>আপনি পারেন:<br><ul><li>**রোগাক্রান্ত পাতার একটি ছবি আপলোড করুন।**</li><li>**আপনার লক্ষণ এবং ফসলের নাম টাইপ করুন** (যেমন: "টমেটোতে বাদামী দাগ")।</ul>`,
+        mr: `नमस्कार! मी **ऍग्रोबोट** आहे. आज मी तुम्हाला तुमच्या शेतीच्या प्रश्नांमध्ये कशी मदत करू शकेन? 👋<br><br>तुम्ही हे करू शकता:<br><ul><li>**रोगग्रस्त पानाचा फोटो अपलोड करा.**</li><li>**तुमची लक्षणे आणि पिकाचे नाव टाइप करा** (उदा: "टोमॅटोमध्ये तपकिरी डाग")।</ul>`,
+        te: `నమస్కారం! నేను **ఆగ్రోబాట్**ను. ఈ రోజు మీ వ్యవసాయ ప్రశ్నలలో నేను ఎలా సహాయం చేయగలను? 👋<br><br>మీరు వీటిని చేయవచ్చు:<br><ul><li>**వ్యాధిగ్రస్త ఆకు యొక్క చిత్రాన్ని అప్‌లోడ్ చేయండి.**</li><li>**మీ లక్షణాలు మరియు పంట పేరును టైప్ చేయండి** (ఉదా: "టొమాటోలో గోధుమ రంగు మచ్చలు")।</ul>`,
+        ta: `வணக்கம்! நான் **அக்ரோபாட்**. உங்கள் விவசாய கேள்விகளுக்கு நான் இன்று எப்படி உதவ முடியும்? 👋<br><br>நீங்கள் செய்யலாம்:<br><ul><li>**நோய்வாய்ப்பட்ட இலையின் படத்தை பதிவேற்றம் செய்யுங்கள்.**</li><li>**உங்கள் அறிகுறிகளையும் பயிரின் பெயரையும் தட்டச்சு செய்யவும்** (எ.கா: "தக்காளியில் பழுப்பு நிற புள்ளிகள்")।</ul>`,
+        gu: `નમસ્કાર! હું **એગ્રોબોટ** છું. આજે હું તમારા કૃષિ પ્રશ્નોમાં કેવી રીતે મદદ કરી શકું? 👋<br><br>તમે કરી શકો છો:<br><ul><li>**રોગગ્રસ્ત પાંદડાનો ફોટો અપલોડ કરો.**</li><li>**તમારા લક્ષણો અને પાકનું નામ ટાઇપ કરો** (દા.ત: "ટામેટામાં બદામી ડાઘ")।</ul>`,
+        ur: `السلام علیکم! میں **ایگرو بوٹ** ہوں۔ میں آج آپ کے زراعت سے متعلق سوالات میں کیسے مدد کر سکتا ہوں؟ 👋<br><br>آپ کر سکتے ہیں:<br><ul><li>**بیمار پتے کی تصویر اپ لوڈ کریں۔**</li><li>**اپنی علامات اور فصل کا نام ٹائپ کریں** (مثلاً: "ٹماٹر پر بھورے دھبے")۔</ul>`,
+        kn: `ನಮಸ್ಕಾರ! ನಾನು **ಆಗ್ರೋಬಾಟ್**. ನಿಮ್ಮ ಕೃಷಿ ಪ್ರಶ್ನೆಗಳಿಗೆ ನಾನು ಇಂದು ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು? 👋<br><br>ನೀವು ಹೀಗೆ ಮಾಡಬಹುದು:<br><ul><li>**ರೋಗಗ್ರಸ್ತ ಎಲೆಯ ಚಿತ್ರವನ್ನು ಅಪ್ಲೋಡ್ ಮಾಡಿ.**</li><li>**ನಿಮ್ಮ ರೋಗಲಕ್ಷಣಗಳು ಮತ್ತು ಬೆಳೆಯ ಹೆಸರನ್ನು ಟೈಪ್ ಮಾಡಿ** (ಉದಾ: "ಟೊಮೆಟೊದಲ್ಲಿ ಕಂದು ಕಲೆಗಳು")।</ul>`,
+        ml: `നമസ്കാരം! ഞാൻ **അഗ്രോബോട്ട്**. നിങ്ങളുടെ കാർഷിക ചോദ്യങ്ങളിൽ എനിക്ക് ഇന്ന് എങ്ങനെ സഹായിക്കാനാകും? 👋<br><br>നിങ്ങൾക്ക് ചെയ്യാൻ കഴിയും:<br><ul><li>**രോഗം ബാധിച്ച ഇലയുടെ ചിത്രം അപ്‌ലോഡ് ചെയ്യുക.**</li><li>**നിങ്ങളുടെ ലക്ഷണങ്ങളും വിളയുടെ പേരും ടൈപ്പുചെയ്യുക** (ഉദാ: "തക്കാളിയിലെ തവിട്ട് പാടുകൾ")।</ul>`,
+        pa: `ਨਮਸਕਾਰ! ਮੈਂ **ਐਗਰੋਬੋਟ** ਹਾਂ। ਅੱਜ ਮੈਂ ਤੁਹਾਡੇ ਖੇਤੀਬਾੜੀ ਸਵਾਲਾਂ ਵਿੱਚ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ? 👋<br><br>ਤੁਸੀਂ ਇਹ ਕਰ ਸਕਦੇ ਹੋ:<br><ul><li>**ਬਿਮਾਰ ਪੱਤੇ ਦੀ ਤਸਵੀਰ ਅੱਪਲੋਡ ਕਰੋ।**</li><li>**ਆਪਣੇ ਲੱਛਣ ਅਤੇ ਫਸਲ ਦਾ ਨਾਮ ਟਾਈਪ ਕਰੋ** (ਜਿਵੇਂ: "ਟਮਾਟਰ 'ਤੇ ਭੂਰੇ ਦਾਗ")।</ul>`,
+    };
+
+    const initialPlaceholder = {
+        en: "Type your question...",
+        hi: "अपना प्रश्न टाइप करें...",
+        or: "ଆପଣଙ୍କ ପ୍ରଶ୍ନ ଟାଇପ୍ କରନ୍ତୁ...",
+        bn: "আপনার প্রশ্ন টাইপ করুন...",
+        mr: "तुमचा प्रश्न टाइप करा...",
+        te: "మీ ప్రశ్నను టైప్ చేయండి...",
+        ta: "உங்கள் கேள்வியை தட்டச்சு செய்யவும்...",
+        gu: "તમારો પ્રશ્ન ટાઇપ કરો...",
+        ur: "اپنا سوال ٹائپ کریں...",
+        kn: "ನಿಮ್ಮ ಪ್ರಶ್ನೆಯನ್ನು ಟೈಪ್ ಮಾಡಿ...",
+        ml: "നിങ്ങളുടെ ചോദ്യം ടൈപ്പ് ചെയ്യുക...",
+        pa: "ਆਪਣਾ ਸਵਾਲ ਟਾਈਪ ਕਰੋ...",
+    };
+
+    function updateWelcomeMessage() {
+        const langCode = langSelector.value;
+        chatMessages.innerHTML = ''; // Clear existing messages
+        
+        // Update input placeholder text
+        userInput.placeholder = initialPlaceholder[langCode] || initialPlaceholder.en;
+
+        // Add new welcome message
+        appendMessage('bot', welcomeMessages[langCode] || welcomeMessages.en);
+    }
+
+    // Function to append messages to the chat window
+    function appendMessage(sender, content) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'message-bubble';
+        
+        // Use a simple, safer markdown-to-HTML conversion for bolding
+        const htmlContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+        bubbleDiv.innerHTML = htmlContent;
+        messageDiv.appendChild(bubbleDiv);
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll
+        return bubbleDiv; // Return the bubble element for potential later use (like images)
+    }
+
+    // Function to handle sending the text message
+    function sendMessage() {
+        const text = userInput.value.trim();
+        const file = imageUploadInput.files[0]; // Check if a file is selected
+
+        if (text === '' && !file) return; // Don't send if nothing is entered or uploaded
+        
+        const langCode = langSelector.value;
+
+        // If text is present, send it
+        if (text !== '') {
+            appendMessage('user', text);
+            userInput.value = '';
+
+            fetch('/chat', {
+                method: 'POST',
+                credentials: 'same-origin',   // 🔥 THIS LINE FIXES IT
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text, lang: langCode })
+            })
+            .then(async response => {
+    const text = await response.text();
+    console.log("RAW RESPONSE:", text);
+    try {
+        return JSON.parse(text);
+    } catch (e) {
+        throw new Error("Response is not JSON");
+    }
+})
+
+            .then(data => displayBotResponse(data))
+            .catch(error => {
+                console.error('Error sending message:', error);
+                const errorMsg = "Sorry, I'm having trouble connecting to the server. Please try again.";
+                appendMessage('bot', errorMsg);
+            });
+        }
+        
+        // If a file is selected, handle the image upload
+        if (file) {
+            handleImageUpload(file);
+        }
+    }
+
+    // New function to handle file selection (updates display, but doesn't send yet)
+    function handleImageSelection(event) {
+        const file = event.target.files[0];
+        if (file) {
+            fileNameDisplay.textContent = file.name;
+            fileNameDisplay.style.display = 'inline-block'; // Show the file name
+            // Optionally, you might change the "Upload" button text or style here
+        } else {
+            fileNameDisplay.textContent = '';
+            fileNameDisplay.style.display = 'none'; // Hide if no file
+        }
+    }
+
+    // Function to handle image upload (now accepts file directly)
+    function handleImageUpload(file) {
+        if (!file) return;
+
+        const langCode = langSelector.value;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Display a preview of the uploaded image in the user's bubble
+            const userMessageBubble = appendMessage('user', '📎 [Image uploaded]');
+            
+            const uploadedImg = document.createElement('img');
+            uploadedImg.src = e.target.result;
+            uploadedImg.className = 'uploaded-image';
+            userMessageBubble.appendChild(uploadedImg);
+
+            // Send file data to backend
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('type', 'image');
+            formData.append('lang', langCode);
+
+            fetch('/chat', {
+                method: 'POST',
+                credentials: 'same-origin', 
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => displayBotResponse(data))
+            .catch(error => {
+                console.error('Error uploading image:', error);
+                appendMessage('bot', "Error processing image. The file might be too large or the format unsupported.");
+            })
+            .finally(() => {
+                // Clear the file input and display name after upload (success or fail)
+                imageUploadInput.value = '';
+                fileNameDisplay.textContent = '';
+                fileNameDisplay.style.display = 'none';
+            });
+        };
+        reader.readAsDataURL(file); // Start reading the file
+    }
+
+    // Function to display the structured response from the backend
+    function displayBotResponse(data) {
+        if (data.error) {
+            if (data.type === 'error') {
+                appendMessage('bot', `**Error:** ${data.error}`);
+            } else {
+                appendMessage('bot', `**Error:** An unexpected error occurred: ${data.error}`);
+            }
+            return;
+        }
+        
+        const labels = data.labels || {};
+        const getLabel = (key, fallback) => labels[key] || fallback;
+
+        let responseHTML = ``;
+        
+        // --- Display the uploaded image from the server response (Server-side Base64) ---
+        if (data.uploaded_image_b64) {
+            responseHTML += `<img src="${data.uploaded_image_b64}" alt="Uploaded Image for Analysis" class="uploaded-image">`;
+        }
+        // --- END IMAGE DISPLAY ---
+
+
+        const diseaseName = data.disease_name || 'N/A';
+        const crop = data.crop || 'N/A';
+let confidence = 'N/A';
+if (data.confidence !== undefined && data.confidence !== null) {
+    if (typeof data.confidence === 'number') {
+      confidence = data.confidence || 'N/A';
+    } else {
+        confidence = data.confidence; // already formatted string
+    }
+}
+
+        // The main disease prediction block
+        responseHTML += `
+            <div class="result-block">
+                <strong>${getLabel('disease_detected', 'Disease Detected')}:</strong> ${diseaseName}<br>
+                <strong>${getLabel('crop', 'Crop')}:</strong> ${crop}<br>
+                <strong>${getLabel('confidence', 'Confidence')}:</strong> ${confidence}<br>
+                <hr style="border-color:#ccc;">
+                <strong>${getLabel('cause', 'Cause')}:</strong> ${data.cause || 'N/A'}<br>
+                <strong>${getLabel('treatment', 'Treatment')}:</strong> ${data.treatment || getLabel('consult_expert', 'N/A')}
+            </div>
+        `;
+
+        // Add matched symptoms 
+        if (data.symptoms && data.symptoms.length > 0) {
+            responseHTML += `<br><strong>${getLabel('symptoms', 'Symptoms')}:</strong>`;
+            responseHTML += `<ul>`;
+            data.symptoms.forEach(s => {
+                responseHTML += `<li>${s}</li>`;
+            });
+            responseHTML += `</ul>`;
+        } 
+        
+        // Final message to display
+        appendMessage('bot', responseHTML);
+    }
+    
+    // Initialize the welcome message when the page loads
+    window.onload = updateWelcomeMessage;
+</script>
+
+</body>
+</html>
